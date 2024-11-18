@@ -115,6 +115,7 @@ class environment:
             wealth[0,:] -= Z[t+1,:]*nu[t+1, :]*self.dt
             wealth[0,:] -= (S[t+1,:] + self.tempLP*nu[t+1, :])*nu[t+1, :]*self.dt
             wealth[0,:] -= self.C*np.abs(S[t+1,:] - Z[t+1,:])*self.dt
+            wealth[0,:] += self.fee*(jump_a + jump_b)
         wealth[0,:] += Y[-1,:]*(Z[-1,:] + S[-1,:])
         wealth[0,:] -= Y[0,:]*(Z[0,:] + S[0,:])
         wealth[0,:] += rew[-1,:]
