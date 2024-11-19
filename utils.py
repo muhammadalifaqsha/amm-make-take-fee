@@ -10,7 +10,7 @@ class environment:
     Model parameters for the environment.
     """
     def __init__(self, sigma = 1., S0 = 100., Z0 = 100., Y0 = 1000., eta = 0.1, xi = 0.1, T = 1., a1 = 1, a2 = 1, a3 = 1, Nt =1_000,
-                fee = 0.5, feeV = 0.5, C = 0.1, gamma = 1, zeta = 1, tempLP = 1e-2):
+                fee = 0.5, feeV = 0.5, C = 0.1, gamma = 1, zeta = 1, tempLP = 1e-2, P0 = 1):
         self.sigma = sigma
         self.T = T
         self.S0 = S0
@@ -30,6 +30,7 @@ class environment:
         self.tempLP = tempLP
         self.timesteps = np.linspace(0, self.T, num = (Nt+1))
         self.dt = self.T/self.Nt
+        self.P0 = P0
 
     def simulate_price_market(self, nsims=1):
         x = np.zeros((self.Nt+1, nsims))
@@ -68,7 +69,7 @@ class environment:
         lambdab = self.lambda_b(Yt, Zt, St)
         jump_a = (np.random.uniform(size=(nsims,)) < lambdaa).astype(int)
         jump_b = (np.random.uniform(size=(nsims,)) < lambdab).astype(int)
-        return jump_a, jump_b
+        return jump_a, jump_b, lambdaa, lambdab
 
     def simulate_venue(self, nsims=1, strag='1', verbose = False):
         S = np.zeros((self.Nt+1, nsims))
@@ -92,8 +93,11 @@ class environment:
         errs_B = np.random.randn(self.Nt, nsims)
         wealth = np.zeros((1,nsims))
         rew = np.zeros((self.Nt+1, nsims))
+        rew[0,:] = self.P0
+        
+        venue_wealth = np.zeros((1,nsims))
         for t in range(self.Nt):
-            jump_a, jump_b = self.simulate_jumps(Y[t,:], Z[t,:], S[t,:])
+            jump_a, jump_b, lambdaa, lambdab = self.simulate_jumps(Y[t,:], Z[t,:], S[t,:])
             A_a = self.xi*(S[t,:] - Z[t,:]*Y[t,:]/(Y[t,:] - self.eta)) - self.fee
             A_b = -self.xi*(S[t,:] - Z[t,:]*Y[t,:]/(Y[t,:] + self.eta)) - self.fee
             A_W = - Y[t,:]*self.sigma
@@ -111,19 +115,33 @@ class environment:
             Z[t+1,:] = Z[t,:] + Z[t,:]*((Y[t,:]/(Y[t,:]+self.xi))**2 - 1)*jump_b + Z[t,:]*((Y[t,:]/(Y[t,:]-self.xi))**2 - 1)*jump_a
             X[t+1,:] = X[t,:] + Z[t,:]*nu[t,:] * self.dt + Z[t,:] * self.eta * errs_B[t,:] * np.sqrt(self.dt) + X[t,:]*(Y[t,:]/(Y[t,:]+self.xi) - 1)*jump_b + X[t,:]*(Y[t,:]/(Y[t,:]-self.xi) - 1)*jump_a
             nu[t+1, :] = self.nu(self.timesteps[t+1], Y[t+1,:], Z[t+1,:], S[t+1,:], strag)
+            
             rew[t+1, :] = rew[t, :] + (A_a*jump_a + A_b*jump_b + A_W * np.sqrt(self.dt) * errs_W[t,:] + A_B * np.sqrt(self.dt) * errs_B[t,:])
+            
+            # reward drift
+            
+            rew_drift = self.C*np.abs(S[t,:] - Z[t,:])
+            rew_drift -= A_B**2/(4*self.eta**2 * self.tempLP)
+            rew_drift += 0.5*self.gamma*(A_W + self.sigma*Y[t,:])**2
+            rew_drift += 0.5*self.gamma*(A_B + self.eta*(S[t,:]+Z[t,:]))**2
+            rew_drift += A_B * nu[t,:]/self.eta
+            
+            rew[t+1, :] += self.dt*rew_drift
+            
             wealth[0,:] -= Z[t+1,:]*nu[t+1, :]*self.dt
             wealth[0,:] -= (S[t+1,:] + self.tempLP*nu[t+1, :])*nu[t+1, :]*self.dt
             wealth[0,:] -= self.C*np.abs(S[t+1,:] - Z[t+1,:])*self.dt
             wealth[0,:] += self.fee*(jump_a + jump_b)
+            venue_wealth[0,:] += self.feeV*(jump_a + jump_b)
         wealth[0,:] += Y[-1,:]*(Z[-1,:] + S[-1,:])
         wealth[0,:] -= Y[0,:]*(Z[0,:] + S[0,:])
         wealth[0,:] += rew[-1,:]
+        venue_wealth[0,:] -= rew[-1,:]
         perf = -np.exp(-self.gamma*wealth)
         if verbose:
-            return S, Y, Z, X, nu, wealth, perf, rew, A_a_hist, A_b_hist, A_W_hist, A_B_hist
+            return S, Y, Z, X, nu, wealth, perf, rew, venue_wealth, A_a_hist, A_b_hist, A_W_hist, A_B_hist
         else:
-            return S, Y, Z, X, nu, wealth, perf, rew
+            return S, Y, Z, X, nu, wealth, perf, rew, venue_wealth
     
     def partial_Y_h_1(self, t, Yt, Zt, St):
         lambdaa = self.lambda_a(Yt, Zt, St)
