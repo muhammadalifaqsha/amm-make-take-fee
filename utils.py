@@ -126,7 +126,7 @@ class environment:
 #             if strag_vn == '0':
 #                 rew_drift = 0
 #             elif strag_vn == '1':
-            rew_drift = self.C*np.abs(S[t,:] - Z[t,:])
+            rew_drift = self.C*Y[t,:]*np.abs(S[t,:] - Z[t,:])
             rew_drift -= A_B**2/(4*self.eta**2 * self.tempLP)
             rew_drift += 0.5*self.gamma*(A_W + self.sigma*Y[t,:])**2
             rew_drift += 0.5*self.gamma*(A_B + self.eta*(S[t,:]+Z[t,:]))**2
@@ -139,7 +139,7 @@ class environment:
             
             wealth[0,:] -= Z[t,:]*nu[t, :]*self.dt
             wealth[0,:] -= (S[t,:] + self.tempLP*nu[t, :])*nu[t, :]*self.dt
-            wealth[0,:] -= self.C*np.abs(S[t,:] - Z[t,:])*self.dt
+            wealth[0,:] -= self.C*Y[t,:]*np.abs(S[t,:] - Z[t,:])*self.dt
             wealth[0,:] += self.fee*(jump_a + jump_b)
             venue_wealth[0,:] += self.feeV*(jump_a + jump_b)
         nu[-1, :] = nu[-2,:]
