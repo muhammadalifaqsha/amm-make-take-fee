@@ -71,7 +71,7 @@ class environment:
         jump_b = (np.random.uniform(size=(nsims,)) < lambdab).astype(int)
         return jump_a, jump_b, lambdaa, lambdab
 
-    def simulate_venue(self, nsims=1, strag='1', verbose = False):
+    def simulate_venue(self, nsims=1, strag_LP='1', strag_vn='1', verbose = False):
         S = np.zeros((self.Nt+1, nsims))
         S[0,:] = self.S0
         Y = np.zeros((self.Nt+1, nsims))
@@ -81,13 +81,14 @@ class environment:
         X = np.zeros((self.Nt+1, nsims))
         X[0,:] = self.Y0*self.Z0
         nu = np.zeros((self.Nt+1, nsims))
-        nu[0,:] = self.nu(0, Y[0,:], Z[0,:], S[0,:], strag)
+        #nu[0,:] = self.nu(0, Y[0,:], Z[0,:], S[0,:], strag)
         
         # Reward components
         A_a_hist = np.zeros((self.Nt, nsims))
         A_b_hist = np.zeros((self.Nt, nsims))
         A_W_hist = np.zeros((self.Nt, nsims))
         A_B_hist = np.zeros((self.Nt, nsims))
+        rew_drift_hist = np.zeros((self.Nt, nsims))
         
         errs_W = np.random.randn(self.Nt, nsims)
         errs_B = np.random.randn(self.Nt, nsims)
@@ -98,11 +99,14 @@ class environment:
         venue_wealth = np.zeros((1,nsims))
         for t in range(self.Nt):
             jump_a, jump_b, lambdaa, lambdab = self.simulate_jumps(Y[t,:], Z[t,:], S[t,:])
-            A_a = self.xi*(S[t,:] - Z[t,:]*Y[t,:]/(Y[t,:] - self.eta)) - self.fee
-            A_b = -self.xi*(S[t,:] - Z[t,:]*Y[t,:]/(Y[t,:] + self.eta)) - self.fee
-            A_W = - Y[t,:]*self.sigma
-            nu_dummy = self.nu(self.timesteps[t], Y[t,:], Z[t,:], S[t,:], strag='1')
-            A_B = nu_dummy*2*self.tempLP*self.eta
+#             A_a = self.xi*(S[t,:] - Z[t,:]*Y[t,:]/(Y[t,:] - self.eta)) - self.fee
+#             A_b = -self.xi*(S[t,:] - Z[t,:]*Y[t,:]/(Y[t,:] + self.eta)) - self.fee
+#             A_W = - Y[t,:]*self.sigma
+#             nu_dummy = self.nu(self.timesteps[t], Y[t,:], Z[t,:], S[t,:], strag='1')
+#             A_B = nu_dummy*2*self.tempLP*self.eta
+            
+            A_a, A_b, A_W, A_B = self.A(self.timesteps[t], Y[t,:], Z[t,:], S[t,:], strag_vn)
+            nu[t,:] = self.nu(self.timesteps[t], Y[t,:], Z[t,:], S[t,:], A_B, strag_LP)
             
             # store reward components
             A_a_hist[t,:] = A_a
@@ -114,32 +118,38 @@ class environment:
             Y[t+1,:] = Y[t,:] + nu[t,:] * self.dt + np.sqrt(self.dt) * self.eta * errs_B[t,:] + self.xi*(jump_b - jump_a)
             Z[t+1,:] = Z[t,:] + Z[t,:]*((Y[t,:]/(Y[t,:]+self.xi))**2 - 1)*jump_b + Z[t,:]*((Y[t,:]/(Y[t,:]-self.xi))**2 - 1)*jump_a
             X[t+1,:] = X[t,:] + Z[t,:]*nu[t,:] * self.dt + Z[t,:] * self.eta * errs_B[t,:] * np.sqrt(self.dt) + X[t,:]*(Y[t,:]/(Y[t,:]+self.xi) - 1)*jump_b + X[t,:]*(Y[t,:]/(Y[t,:]-self.xi) - 1)*jump_a
-            nu[t+1, :] = self.nu(self.timesteps[t+1], Y[t+1,:], Z[t+1,:], S[t+1,:], strag)
+            #nu[t+1, :] = self.nu(self.timesteps[t+1], Y[t+1,:], Z[t+1,:], S[t+1,:], strag_LP)
             
             rew[t+1, :] = rew[t, :] + (A_a*jump_a + A_b*jump_b + A_W * np.sqrt(self.dt) * errs_W[t,:] + A_B * np.sqrt(self.dt) * errs_B[t,:])
             
             # reward drift
-            
+#             if strag_vn == '0':
+#                 rew_drift = 0
+#             elif strag_vn == '1':
             rew_drift = self.C*np.abs(S[t,:] - Z[t,:])
             rew_drift -= A_B**2/(4*self.eta**2 * self.tempLP)
             rew_drift += 0.5*self.gamma*(A_W + self.sigma*Y[t,:])**2
             rew_drift += 0.5*self.gamma*(A_B + self.eta*(S[t,:]+Z[t,:]))**2
             rew_drift += A_B * nu[t,:]/self.eta
+            rew_drift -= (lambdaa*(1 - np.exp(-self.gamma*(A_a-self.xi*(S[t,:] - Z[t,:]*Y[t,:]/(Y[t,:] - self.eta)) + self.fee)))/self.gamma)
+            rew_drift -= (lambdab*(1 - np.exp(-self.gamma*(A_b+self.xi*(S[t,:] - Z[t,:]*Y[t,:]/(Y[t,:] + self.eta)) + self.fee)))/self.gamma)
             
+            rew_drift_hist[t, :] = rew_drift
             rew[t+1, :] += self.dt*rew_drift
             
-            wealth[0,:] -= Z[t+1,:]*nu[t+1, :]*self.dt
-            wealth[0,:] -= (S[t+1,:] + self.tempLP*nu[t+1, :])*nu[t+1, :]*self.dt
-            wealth[0,:] -= self.C*np.abs(S[t+1,:] - Z[t+1,:])*self.dt
+            wealth[0,:] -= Z[t,:]*nu[t, :]*self.dt
+            wealth[0,:] -= (S[t,:] + self.tempLP*nu[t, :])*nu[t, :]*self.dt
+            wealth[0,:] -= self.C*np.abs(S[t,:] - Z[t,:])*self.dt
             wealth[0,:] += self.fee*(jump_a + jump_b)
             venue_wealth[0,:] += self.feeV*(jump_a + jump_b)
+        nu[-1, :] = nu[-2,:]
         wealth[0,:] += Y[-1,:]*(Z[-1,:] + S[-1,:])
         wealth[0,:] -= Y[0,:]*(Z[0,:] + S[0,:])
         wealth[0,:] += rew[-1,:]
         venue_wealth[0,:] -= rew[-1,:]
         perf = -np.exp(-self.gamma*wealth)
         if verbose:
-            return S, Y, Z, X, nu, wealth, perf, rew, venue_wealth, A_a_hist, A_b_hist, A_W_hist, A_B_hist
+            return S, Y, Z, X, nu, wealth, perf, rew, venue_wealth, A_a_hist, A_b_hist, A_W_hist, A_B_hist, rew_drift_hist
         else:
             return S, Y, Z, X, nu, wealth, perf, rew, venue_wealth
     
@@ -149,22 +159,41 @@ class environment:
         cond1 = ((lambdaa > 0) & (lambdab > 0))
         strag1 = (self.T - t) * (2*self.a2*(self.fee + self.feeV) - self.C*np.abs(St-Zt))
         cond2 = ((lambdaa > 0) & (lambdab == 0))
-        strag2 = self.a2*(self.fee + self.feeV)*(1 - np.exp(-self.a2*self.xi*(self.T-t)))/(self.a2*self.xi)
-        strag2 += Zt*(self.C + self.a2*self.xi)*(np.exp(self.a2*self.xi*(self.T-t))-1)/(self.a2*self.xi)
-        strag2 += St*(self.C + self.a2*self.xi)*(np.exp(-self.a2*self.xi*(self.T-t))-1)/(self.a2*self.xi)
+        if self.a2!= 0:
+            strag2 = self.a2*(self.fee + self.feeV)*(1 - np.exp(-self.a2*self.xi*(self.T-t)))/(self.a2*self.xi)
+            strag2 += Zt*(self.C + self.a2*self.xi)*(np.exp(self.a2*self.xi*(self.T-t))-1)/(self.a2*self.xi)
+            strag2 += St*(self.C + self.a2*self.xi)*(np.exp(-self.a2*self.xi*(self.T-t))-1)/(self.a2*self.xi)
+            
+            strag3 = self.a2*(self.fee + self.feeV)*(np.exp(self.a2*self.xi*(self.T-t))-1)/(self.a2*self.xi)
+            strag3 += Zt*(self.C + self.a2*self.xi)*(np.exp(-self.a2*self.xi*(self.T-t))-1)/(self.a2*self.xi)
+            strag3 += St*(self.C + self.a2*self.xi)*(np.exp(self.a2*self.xi*(self.T-t))-1)/(self.a2*self.xi)
+        else:
+            strag2 = Zt*self.C*(self.T - t)
+            strag2 += -St*self.C*(self.T-t)
+            
+            strag3 = -Zt*self.C*(self.T - t)
+            strag3 += St*self.C*(self.T-t)
         cond3 = ((lambdaa == 0) & (lambdab > 0))
-        strag3 = self.a2*(self.fee + self.feeV)*(np.exp(self.a2*self.xi*(self.T-t))-1)/(self.a2*self.xi)
-        strag3 += Zt*(self.C + self.a2*self.xi)*(np.exp(-self.a2*self.xi*(self.T-t))-1)/(self.a2*self.xi)
-        strag3 += St*(self.C + self.a2*self.xi)*(np.exp(self.a2*self.xi*(self.T-t))-1)/(self.a2*self.xi)
         strag = cond1*strag1 + cond2*strag2 + cond3*strag3
         return strag
     
-    def nu(self, t, Yt, Zt, St, strag):
-        if strag == '0':
+    def A(self, t, Yt, Zt, St, strag_vn):
+        if strag_vn == '0':
+            A_B = 0
+            A_W = 0
+            A_a = 0
+            A_b = 0
+        elif strag_vn == '1':
+            A_a = self.xi*(St - Zt*Yt/(Yt - self.eta)) - self.fee
+            A_b = -self.xi*(St - Zt*Yt/(Yt + self.eta)) - self.fee
+            A_W = - Yt*self.sigma
+            A_B = (self.partial_Y_h_1(t, Yt, Zt, St)/(self.tempLP*self.eta) - 2*(St+Zt)*self.gamma*self.eta)/(2*self.gamma + 1/(self.tempLP * self.eta**2))
+        return A_a, A_b, A_W, A_B
+    
+    def nu(self, t, Yt, Zt, St, A_B, strag_LP):
+        if strag_LP == '0':
             strag = 0
-        elif strag == '1':
-            strag = self.partial_Y_h_1(t, Yt, Zt, St)/(self.tempLP*self.eta)
-            strag -= 2*(St+Zt)*self.gamma*self.eta
-            strag /= (4*self.eta*self.tempLP*self.gamma + 2/self.eta)
+        elif strag_LP == '1':
+            strag = A_B/(2*self.tempLP*self.eta)
         return strag
         
