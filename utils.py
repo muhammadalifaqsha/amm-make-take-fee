@@ -184,8 +184,8 @@ class environment:
             A_a = 0
             A_b = 0
         elif strag_vn == '1':
-            A_a = self.xi*(St - Zt*Yt/(Yt - self.eta)) - self.fee
-            A_b = -self.xi*(St - Zt*Yt/(Yt + self.eta)) - self.fee
+            A_a = self.xi*(St - Zt*Yt/(Yt - self.xi)) - self.fee
+            A_b = -self.xi*(St - Zt*Yt/(Yt + self.xi)) - self.fee
             A_W = - Yt*self.sigma
             A_B = (self.partial_Y_h_1(t, Yt, Zt, St)/(self.tempLP*self.eta) - 2*(St+Zt)*self.gamma*self.eta)/(2*self.gamma + 1/(self.tempLP * self.eta**2))
         return A_a, A_b, A_W, A_B
