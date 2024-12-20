@@ -135,14 +135,23 @@ class environment:
         self.G1_eval = lambda t: np.array([[CubicSpline(self.timesteps, self.G1[i,:])(t)] for i in range(3)])
         
         self.g22_eval = lambda t: self.G2_eval(t)[0,0]
+        self.g22 = self.G2[:,0,0]
         self.g23_eval = lambda t: self.G2_eval(t)[0,1]
+        self.g23 = self.G2[:,0,1]
         self.g24_eval = lambda t: self.G2_eval(t)[0,2]
+        self.g24 = self.G2[:,0,2]
         self.g33_eval = lambda t: self.G2_eval(t)[1,1]
+        self.g33 = self.G2[:,1,1]
         self.g34_eval = lambda t: self.G2_eval(t)[1,2]
+        self.g34 = self.G2[:,1,2]
         self.g44_eval = lambda t: self.G2_eval(t)[2,2]
+        self.g44 = self.G2[:,2,2]
         self.g12_eval = lambda t: self.G1_eval(t)[0,0]
+        self.g12 = self.G1[0,:]
         self.g13_eval = lambda t: self.G1_eval(t)[1,0]
+        self.g13 = self.G1[1,:]
         self.g14_eval = lambda t: self.G1_eval(t)[2,0]
+        self.g14 = self.G1[2,:]
         
         dg11 = lambda t, g11: 2*self.a1*self.feeV + (1+2*self.tempLP*self.zeta*self.eta**2-4*self.tempLP**2*self.gamma*self.zeta*self.eta**4)*self.g13_eval(self.T-t)**2/(self.tempLP*(1+2*self.tempLP*(self.gamma+self.zeta)*self.eta**2)) - (2*self.gamma*self.zeta*self.sigma**2*self.g14_eval(self.T-t)**2)/(self.gamma+self.zeta) + (2*self.a1*self.xi**2+self.eta**2)*self.g33_eval(self.T-t)+self.sigma**2*self.g44_eval(self.T-t)
         g11_init = [0]
@@ -229,7 +238,11 @@ class environment:
 #             nu_dummy = self.nu(self.timesteps[t], Y[t,:], Z[t,:], S[t,:], strag='1')
 #             A_B = nu_dummy*2*self.tempLP*self.eta
             
-            A_a, A_b, A_W, A_B = self.A(self.timesteps[t], Y[t,:], Z[t,:], S[t,:], strag_vn)
+            if strag_vn == 'exp':
+                A_a, A_b, A_W, A_B = self.A(t, Y[t,:], Z[t,:], S[t,:], strag_vn)
+            else:
+                A_a, A_b, A_W, A_B = self.A(self.timesteps[t], Y[t,:], Z[t,:], S[t,:], strag_vn)
+                
             nu[t,:] = self.nu(self.timesteps[t], Y[t,:], Z[t,:], S[t,:], A_B, strag_LP)
             
             # store reward components
@@ -278,15 +291,15 @@ class environment:
             return S, Y, Z, X, nu, wealth, perf, rew, venue_wealth
         
     def v_exp(self, t, Zt, Yt, St):
-        v = self.g11_eval(t) + 2*(Zt*self.g12_eval(t) + Yt*self.g13_eval(t) + St*self.g14_eval(t)) + (Zt*(Zt*self.g22_eval(t)+Yt*self.g23_eval(t)+St*self.g24_eval(t))) + (Yt*(Zt*self.g23_eval(t)+Yt*self.g33_eval(t)+St*self.g34_eval(t))) + (St*(Zt*self.g24_eval(t)+Yt*self.g34_eval(t)+St*self.g44_eval(t)))
+        v = 2*(Zt*self.g12[t] + Yt*self.g13[t] + St*self.g14[t]) + (Zt*(Zt*self.g22[t]+Yt*self.g23[t]+St*self.g24[t])) + (Yt*(Zt*self.g23[t]+Yt*self.g33[t]+St*self.g34[t])) + (St*(Zt*self.g24[t]+Yt*self.g34[t]+St*self.g44[t]))
         return v
         
     def partial_Y_v_exp(self, t, Zt, Yt, St):
-        partial = 2*(self.g13_eval(t) + Zt*self.g23_eval(t)+Yt*self.g33_eval(t)+St*self.g44_eval(t))
+        partial = 2*(self.g13[t] + Zt*self.g23[t]+Yt*self.g33[t]+St*self.g34[t])
         return partial 
         
     def partial_S_v_exp(self, t, Zt, Yt, St):
-        partial = 2*(self.g14_eval(t) + Zt*self.g24_eval(t)+Yt*self.g34_eval(t)+St*self.g44_eval(t))
+        partial = 2*(self.g14[t] + Zt*self.g24[t]+Yt*self.g34[t]+St*self.g44[t])
         return partial
     
     def partial_Y_h_1(self, t, Yt, Zt, St):
@@ -310,7 +323,8 @@ class environment:
             strag3 = -Zt*self.C*(self.T - t)
             strag3 += St*self.C*(self.T-t)
         cond3 = ((lambdaa == 0) & (lambdab > 0))
-        strag = cond1*strag1 + cond2*strag2 + cond3*strag3
+        #strag = cond1*strag1 + cond2*strag2 + cond3*strag3
+        strag = strag1
         return strag
     
     def A(self, t, Yt, Zt, St, strag_vn):
