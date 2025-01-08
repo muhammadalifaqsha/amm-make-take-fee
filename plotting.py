@@ -47,7 +47,7 @@ def stress_two_parameters_two_sets_and_show_nu(parameter1 = 'fee', parameter2 = 
         nu_all[:,it] = nu[:,nsim]
     fig, axs = plt.subplots(1, 1, sharex=True, figsize=(6,4))
     for i in range(len(stressed_values1)):
-        plt.plot(env_aux.timesteps, nu_all[:,i], label= to_print1 +  f'$* {(values1[i])}$'+r'$\,\&\,$'+ to_print2 +  f'$* {(values2[i])}$', color = colors[i])
+        plt.plot(env_aux.timesteps, nu_all[:,i], label= to_print1 +  f'$* {(values1[i])}$'+r'$\,\,\,\&\,\,\,$'+ to_print2 +  f'$* {(values2[i])}$', color = colors[i])
     plt.xlabel(r'$t$', fontsize = fsL)
     plt.ylabel(r'$\nu^*_t$', fontsize = fsL)
     if showZero:
