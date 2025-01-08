@@ -10,7 +10,7 @@ class environment:
     Model parameters for the environment.
     """
     def __init__(self, sigma = 1., S0 = 100., Z0 = 100., Y0 = 1000., eta = 0.1, xi = 0.1, T = 1., a1 = 1, a2 = 1, a3 = 1, Nt =1_000,
-                fee = 0.5, feeV = 0.5, C = 0.1, gamma = 1, zeta = 1, tempLP = 1e-2, P0 = 1):
+                fee = 0.5, feeV = 0.5, C = 0.1, gamma = 1, zeta = 1, tempLP = 1e-2, P0 = 1, corr_BMs = 0.):
         self.sigma = sigma
         self.T = T
         self.S0 = S0
@@ -31,6 +31,7 @@ class environment:
         self.timesteps = np.linspace(0, self.T, num = (Nt+1))
         self.dt = self.T/self.Nt
         self.P0 = P0
+        self.corr_BMs = corr_BMs
 
     def simulate_price_market(self, nsims=1):
         x = np.zeros((self.Nt+1, nsims))
@@ -135,7 +136,7 @@ class environment:
             rew_drift -= (lambdab*(1 - np.exp(-self.gamma*(A_b+self.xi*(S[t,:] - Z[t,:]*Y[t,:]/(Y[t,:] + self.eta)) + self.fee)))/self.gamma)
             
             rew_drift_hist[t, :] = rew_drift
-            rew[t+1, :] += self.dt*rew_drift
+            rew[t+1, :] = rew[t+1, :] + self.dt*rew_drift
             
             wealth[0,:] -= Z[t,:]*nu[t, :]*self.dt
             wealth[0,:] -= (S[t,:] + self.tempLP*nu[t, :])*nu[t, :]*self.dt
@@ -149,16 +150,16 @@ class environment:
         venue_wealth[0,:] -= rew[-1,:]
         perf = -np.exp(-self.gamma*wealth)
         if verbose:
-            return S, Y, Z, X, nu, wealth, perf, rew, venue_wealth, A_a_hist, A_b_hist, A_W_hist, A_B_hist, rew_drift_hist
+            return S, Y, Z, X, nu, wealth, perf, rew, venue_wealth, A_a_hist, A_b_hist, A_W_hist, A_B_hist, rew_drift_hist, errs_B
         else:
             return S, Y, Z, X, nu, wealth, perf, rew, venue_wealth
     
     def partial_Y_h_1(self, t, Yt, Zt, St):
         lambdaa = self.lambda_a(Yt, Zt, St)
         lambdab = self.lambda_b(Yt, Zt, St)
-        cond1 = ((lambdaa > 0) & (lambdab > 0))
+        cond1 = True #((lambdaa > 0) & (lambdab > 0))
         strag1 = (self.T - t) * (2*self.a2*(self.fee + self.feeV) - self.C*np.abs(St-Zt))
-        cond2 = ((lambdaa > 0) & (lambdab == 0))
+        cond2 = False #((lambdaa > 0) & (lambdab == 0))
         if self.a2!= 0:
             strag2 = self.a2*(self.fee + self.feeV)*(1 - np.exp(-self.a2*self.xi*(self.T-t)))/(self.a2*self.xi)
             strag2 += Zt*(self.C + self.a2*self.xi)*(np.exp(self.a2*self.xi*(self.T-t))-1)/(self.a2*self.xi)
@@ -173,7 +174,7 @@ class environment:
             
             strag3 = -Zt*self.C*(self.T - t)
             strag3 += St*self.C*(self.T-t)
-        cond3 = ((lambdaa == 0) & (lambdab > 0))
+        cond3 = False #((lambdaa == 0) & (lambdab > 0))
         strag = cond1*strag1 + cond2*strag2 + cond3*strag3
         return strag
     
