@@ -268,8 +268,8 @@ class environment:
             rew_drift += 0.5*self.gamma*(A_W + self.sigma*Y[t,:])**2
             rew_drift += 0.5*self.gamma*(A_B + self.eta*(S[t,:]+Z[t,:]))**2
             rew_drift += A_B * nu[t,:]/self.eta
-            rew_drift -= (lambdaa*(1 - np.exp(-self.gamma*(A_a-self.xi*(S[t,:] - Z[t,:]*Y[t,:]/(Y[t,:] - self.eta)) + self.fee)))/self.gamma)
-            rew_drift -= (lambdab*(1 - np.exp(-self.gamma*(A_b+self.xi*(S[t,:] - Z[t,:]*Y[t,:]/(Y[t,:] + self.eta)) + self.fee)))/self.gamma)
+            rew_drift -= (lambdaa*(1 - np.exp(-self.gamma*(A_a-self.xi*(S[t,:] - Z[t,:]*Y[t,:]/(Y[t,:] - self.xi)) + self.fee)))/self.gamma)
+            rew_drift -= (lambdab*(1 - np.exp(-self.gamma*(A_b+self.xi*(S[t,:] - Z[t,:]*Y[t,:]/(Y[t,:] + self.xi)) + self.fee)))/self.gamma)
             
             rew_drift_hist[t, :] = rew_drift
             rew[t+1, :] += self.dt*rew_drift
