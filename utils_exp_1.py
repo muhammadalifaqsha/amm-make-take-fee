@@ -80,9 +80,10 @@ class environment:
         self.V[2,1] = (self.gamma*self.zeta*self.sigma**2)/(self.gamma+self.zeta)
         
         self.R = np.zeros((3,3))
-        self.R[0,0] = 2*self.a3 + (self.gamma*self.eta**2*(1+2*self.tempLP*self.zeta*self.eta**2))/(2+4*self.tempLP*(self.gamma+self.zeta)*self.eta**2)
+        self.R[0,0] = 2*self.a3*self.xi + (self.gamma*self.eta**2*(1+2*self.tempLP*self.zeta*self.eta**2))/(2+4*self.tempLP*(self.gamma+self.zeta)*self.eta**2)
         self.R[2,2] = self.R[0,0]
-        self.R[0,2] = -2*self.a3 + (self.gamma*self.eta**2*(1+2*self.tempLP*self.zeta*self.eta**2))/(2+4*self.tempLP*(self.gamma+self.zeta)*self.eta**2)
+        self.R[1,1] = self.gamma*self.zeta*self.sigma**2/(2*(self.gamma+self.zeta))
+        self.R[0,2] = -2*self.a3*self.xi + (self.gamma*self.eta**2*(1+2*self.tempLP*self.zeta*self.eta**2))/(2+4*self.tempLP*(self.gamma+self.zeta)*self.eta**2)
         self.R[2,0] = self.R[0,2]
         
         self.dG2 = lambda t, G2: -dM(t, self.T, G2, self.U, self.V, self.R)        
