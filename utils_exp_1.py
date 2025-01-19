@@ -286,6 +286,12 @@ class environment:
         wealth[0,:] -= Y[0,:]*(Z[0,:] + S[0,:])
         wealth[0,:] += rew[-1,:]
         venue_wealth[0,:] -= rew[-1,:]
+#         if venue_wealth[0,:].mean() < 0:
+#             mean = venue_wealth[0,:].mean()
+#             self.P0 = self.P0 + mean
+#             rew = rew + mean
+#             venue_wealth = venue_wealth - mean
+#             wealth = wealth + mean
         perf = -np.exp(-self.gamma*wealth)
         if verbose:
             return S, Y, Z, X, nu, wealth, perf, rew, venue_wealth, A_a_hist, A_b_hist, A_W_hist, A_B_hist, rew_drift_hist, errs_B
@@ -336,7 +342,7 @@ class environment:
             A_a = 0
             A_b = 0
         elif strag_vn == '1':
-            A_a = self.xi*(St - Zt*Yt/(Yt - self.xi)) - self.fee
+            A_a = self.xi*(St - Zt*Yt/(Yt - self.xi)) - self.fee # self.fee is just 0
             A_b = -self.xi*(St - Zt*Yt/(Yt + self.xi)) - self.fee
             A_W = - Yt*self.sigma
             A_B = (self.partial_Y_h_1(t, Yt, Zt, St)/(self.tempLP*self.eta) - 2*(St+Zt)*self.gamma*self.eta)/(2*self.gamma + 1/(self.tempLP * self.eta**2))
