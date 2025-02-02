@@ -1,8 +1,7 @@
 import numpy as np
-import utils_exp_1 as utils
+import utils as utils
 nsims = 100
-strag_LP = '1'
-strag_vn = '1'
+
 colors = ['tab:red', 'tab:orange', 'skyblue', 'tab:green', 'tab:blue','black']
 
 import matplotlib.pyplot as plt
@@ -26,7 +25,7 @@ plt.rcParams["font.size"] = fs
 
 def stress_two_parameters_two_sets_and_show_nu(parameter1 = 'fee', parameter2 = 'xi', values1 = [1,2,4,8,16], values2 = [1,2,4,8,16], 
                                                params = [], to_print1 = 'a', to_print2 = 'b', logScale = False, showZero = True, showSZ = False,
-                                               savefig = False, filename = 'check', nsim = 0, colors = colors):
+                                               savefig = False, filename = 'check', nsim = 0, colors = colors, strag_vn = '1', strag_LP = '1'):
     stressed_values1 = np.array(values1) * params[parameter1]
     stressed_values2 = np.array(values2) * params[parameter2]
     Nt = params['Nt']
@@ -72,7 +71,7 @@ def stress_two_parameters_two_sets_and_show_nu(parameter1 = 'fee', parameter2 = 
         plt.legend(fontsize = fs, loc='upper right')
         plt.show()
         
-def params_show_nu(params = [], showZero = True, nsim =0, colors = colors):
+def params_show_nu(params = [], showZero = True, nsim =0, colors = colors, strag_vn = '1', strag_LP = '1'):
     Nt = params['Nt']
     nu_all = np.zeros((Nt+1,))
     np.random.seed(123)
@@ -90,7 +89,7 @@ def params_show_nu(params = [], showZero = True, nsim =0, colors = colors):
     
 def stress_parameter_and_show_nu(parameter = 'tempLP', values = [1,2,4,8,16], params = [], 
                                  to_print = 'a', showZero = True, verbose= False, savefig = False, 
-                                 filename = 'check', nsim = 0, colors = colors):
+                                 filename = 'check', nsim = 0, colors = colors, strag_vn = '1', strag_LP = '1'):
     Nt = params['Nt']
     stressed_values = np.array(values) * params[parameter]
     nu_all = np.zeros((Nt+1, len(stressed_values)))
@@ -118,8 +117,8 @@ def stress_parameter_and_show_nu(parameter = 'tempLP', values = [1,2,4,8,16], pa
         nu_to_show = np.zeros_like(env_aux.timesteps)
         nu_to_show2 = np.zeros_like(env_aux.timesteps)
         for it, t in enumerate(env_aux.timesteps):
-            _,_,_,AB = env_aux.A(t=t, Yt=Y[it,nsim], Zt= Z[it,nsim], St= S[it,nsim], strag_vn = '1')
-            nu_to_show[it] = env_aux.nu(t,   Yt=Y[it,nsim], Zt= Z[it,nsim], St= S[it,nsim], A_B = AB, strag_LP = '1')
+            _,_,_,AB = env_aux.A(t=t, Yt=Y[it,nsim], Zt= Z[it,nsim], St= S[it,nsim], strag_vn = strag_vn)   
+            nu_to_show[it] = env_aux.nu(t,   Yt=Y[it,nsim], Zt= Z[it,nsim], St= S[it,nsim], A_B = AB, strag_LP = strag_LP)
             nu_to_show2[it] = ( (env_aux.T - t) * (2*env_aux.a2*env_aux.feeV) - 2 * (S[it,nsim] + Z[it,nsim]) * env_aux.gamma * env_aux.tempLP * env_aux.eta**2 ) / (4* env_aux.eta**2 * env_aux.tempLP**2 * env_aux.gamma + 2*env_aux.tempLP)
         fig, axs = plt.subplots(1, 1, sharex=True, figsize=(6,4))
         plt.plot(env_aux.timesteps, nu_to_show, '-', alpha = 0.4, color='tab:red', label = 'env')
