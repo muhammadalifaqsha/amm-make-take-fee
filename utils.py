@@ -232,7 +232,7 @@ class environment:
         rew[0,:] = self.P0
         
         venue_wealth = np.zeros((1,nsims))
-        for t in range(self.Nt):
+        for t in tqdm(range(self.Nt)):
             jump_a, jump_b, lambdaa, lambdab = self.simulate_jumps(Y[t,:], Z[t,:], S[t,:])
 #             A_a = self.xi*(S[t,:] - Z[t,:]*Y[t,:]/(Y[t,:] - self.eta)) - self.fee
 #             A_b = -self.xi*(S[t,:] - Z[t,:]*Y[t,:]/(Y[t,:] + self.eta)) - self.fee
