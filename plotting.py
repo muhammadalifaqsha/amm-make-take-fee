@@ -1,5 +1,5 @@
 import numpy as np
-import utils_rn as utils
+import utils as utils_aux
 nsims = 100
 
 colors = ['tab:red', 'tab:orange', 'skyblue', 'tab:green', 'tab:blue','black']
@@ -23,7 +23,7 @@ plt.rcParams["font.size"] = fs
 
 
 
-def stress_two_parameters_two_sets_and_show_nu(environment = utils.environment, parameter1 = 'fee', parameter2 = 'xi', values1 = [1,2,4,8,16], values2 = [1,2,4,8,16], 
+def stress_two_parameters_two_sets_and_show_nu(environment = utils_aux.environment, parameter1 = 'fee', parameter2 = 'xi', values1 = [1,2,4,8,16], values2 = [1,2,4,8,16], 
                                                params = [], to_print1 = 'a', to_print2 = 'b', logScale = False, showZero = True, showSZ = False,
                                                savefig = False, filename = 'check', nsim = 0, colors = colors, strag_vn = '1', strag_LP = '1'):
     stressed_values1 = np.array(values1) * params[parameter1]
@@ -36,11 +36,6 @@ def stress_two_parameters_two_sets_and_show_nu(environment = utils.environment, 
         tc2 = stressed_values2[it]
         params_aux[parameter1] = tc
         params_aux[parameter2] = tc2
-        if params_aux['a2'] * params_aux['feeV'] * params_aux['T'] > (params_aux['S0'] + params_aux['Z0'])*params_aux['gamma']* params_aux['tempLP']* params_aux['eta']**2:
-            posneg = 'positive'
-        else:
-            posneg = 'negative'
-        print('When '+ parameter1+f' = {tc} ' + ' and ' + parameter2 + f' ={tc2} ' +'we should start '+posneg)
         env_aux = environment(**params_aux)
         S, Y, Z, X, nu, wealth, perf, rew, venue_wealth, A_a_hist, A_b_hist, A_W_hist, A_B_hist, rew_drift_hist = env_aux.simulate_venue(nsims=nsims, strag_LP=strag_LP, strag_vn=strag_vn, verbose = True)
         nu_all[:,it] = nu[:,nsim]
@@ -71,7 +66,7 @@ def stress_two_parameters_two_sets_and_show_nu(environment = utils.environment, 
         plt.legend(fontsize = fs, loc='upper right')
         plt.show()
         
-def params_show_nu(environment = utils.environment, params = [], showZero = True, nsim =0, colors = colors, strag_vn = '1', strag_LP = '1'):
+def params_show_nu(environment = utils_aux.environment, params = [], showZero = True, nsim =0, colors = colors, strag_vn = '1', strag_LP = '1'):
     Nt = params['Nt']
     nu_all = np.zeros((Nt+1,))
     np.random.seed(123)
@@ -87,7 +82,7 @@ def params_show_nu(environment = utils.environment, params = [], showZero = True
     
 
     
-def stress_parameter_and_show_nu(environment = utils.environment, parameter = 'tempLP', values = [1,2,4,8,16], params = [], 
+def stress_parameter_and_show_nu(environment = utils_aux.environment, parameter = 'tempLP', values = [1,2,4,8,16], params = [], 
                                  to_print = 'a', showZero = True, verbose= False, savefig = False, 
                                  filename = 'check', nsim = 0, colors = colors, strag_vn = '1', strag_LP = '1'):
     Nt = params['Nt']
