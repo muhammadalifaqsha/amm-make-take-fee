@@ -1,5 +1,5 @@
 import numpy as np
-import utils as utils
+import utils_rn as utils
 nsims = 100
 
 colors = ['tab:red', 'tab:orange', 'skyblue', 'tab:green', 'tab:blue','black']
@@ -23,7 +23,7 @@ plt.rcParams["font.size"] = fs
 
 
 
-def stress_two_parameters_two_sets_and_show_nu(parameter1 = 'fee', parameter2 = 'xi', values1 = [1,2,4,8,16], values2 = [1,2,4,8,16], 
+def stress_two_parameters_two_sets_and_show_nu(environment = utils.environment, parameter1 = 'fee', parameter2 = 'xi', values1 = [1,2,4,8,16], values2 = [1,2,4,8,16], 
                                                params = [], to_print1 = 'a', to_print2 = 'b', logScale = False, showZero = True, showSZ = False,
                                                savefig = False, filename = 'check', nsim = 0, colors = colors, strag_vn = '1', strag_LP = '1'):
     stressed_values1 = np.array(values1) * params[parameter1]
@@ -41,8 +41,8 @@ def stress_two_parameters_two_sets_and_show_nu(parameter1 = 'fee', parameter2 = 
         else:
             posneg = 'negative'
         print('When '+ parameter1+f' = {tc} ' + ' and ' + parameter2 + f' ={tc2} ' +'we should start '+posneg)
-        env_aux = utils.environment(**params_aux)
-        S, Y, Z, X, nu, wealth, perf, rew, venue_wealth, A_a_hist, A_b_hist, A_W_hist, A_B_hist, rew_drift_hist, errs_B = env_aux.simulate_venue(nsims=nsims, strag_LP=strag_LP, strag_vn=strag_vn, verbose = True)
+        env_aux = environment(**params_aux)
+        S, Y, Z, X, nu, wealth, perf, rew, venue_wealth, A_a_hist, A_b_hist, A_W_hist, A_B_hist, rew_drift_hist = env_aux.simulate_venue(nsims=nsims, strag_LP=strag_LP, strag_vn=strag_vn, verbose = True)
         nu_all[:,it] = nu[:,nsim]
     fig, axs = plt.subplots(1, 1, sharex=True, figsize=(6,4))
     for i in range(len(stressed_values1)):
@@ -71,12 +71,12 @@ def stress_two_parameters_two_sets_and_show_nu(parameter1 = 'fee', parameter2 = 
         plt.legend(fontsize = fs, loc='upper right')
         plt.show()
         
-def params_show_nu(params = [], showZero = True, nsim =0, colors = colors, strag_vn = '1', strag_LP = '1'):
+def params_show_nu(environment = utils.environment, params = [], showZero = True, nsim =0, colors = colors, strag_vn = '1', strag_LP = '1'):
     Nt = params['Nt']
     nu_all = np.zeros((Nt+1,))
     np.random.seed(123)
-    env_aux = utils.environment(**params)
-    S, Y, Z, X, nu, wealth, perf, rew, venue_wealth, A_a_hist, A_b_hist, A_W_hist, A_B_hist, rew_drift_hist, _ = env_aux.simulate_venue(nsims=nsims, strag_LP=strag_LP, strag_vn=strag_vn, verbose = True)
+    env_aux = environment(**params)
+    S, Y, Z, X, nu, wealth, perf, rew, venue_wealth, A_a_hist, A_b_hist, A_W_hist, A_B_hist, rew_drift_hist = env_aux.simulate_venue(nsims=nsims, strag_LP=strag_LP, strag_vn=strag_vn, verbose = True)
     fig, axs = plt.subplots(1, 1, sharex=True, figsize=(6,4))
     plt.plot(env_aux.timesteps, nu[:,nsim], color = colors[0])
     plt.xlabel(r'$t$', fontsize = 18)
@@ -87,7 +87,7 @@ def params_show_nu(params = [], showZero = True, nsim =0, colors = colors, strag
     
 
     
-def stress_parameter_and_show_nu(parameter = 'tempLP', values = [1,2,4,8,16], params = [], 
+def stress_parameter_and_show_nu(environment = utils.environment, parameter = 'tempLP', values = [1,2,4,8,16], params = [], 
                                  to_print = 'a', showZero = True, verbose= False, savefig = False, 
                                  filename = 'check', nsim = 0, colors = colors, strag_vn = '1', strag_LP = '1'):
     Nt = params['Nt']
@@ -97,8 +97,8 @@ def stress_parameter_and_show_nu(parameter = 'tempLP', values = [1,2,4,8,16], pa
         np.random.seed(123)
         params_aux = params.copy()
         params_aux[parameter] = tc
-        env_aux = utils.environment(**params_aux)
-        S, Y, Z, X, nu, wealth, perf, rew, venue_wealth, A_a_hist, A_b_hist, A_W_hist, A_B_hist, rew_drift_hist, _ = env_aux.simulate_venue(nsims=nsims, strag_LP=strag_LP, strag_vn=strag_vn, verbose = True)
+        env_aux = environment(**params_aux)
+        S, Y, Z, X, nu, wealth, perf, rew, venue_wealth, A_a_hist, A_b_hist, A_W_hist, A_B_hist, rew_drift_hist = env_aux.simulate_venue(nsims=nsims, strag_LP=strag_LP, strag_vn=strag_vn, verbose = True)
         nu_all[:,it] = nu[:,nsim]
     fig, axs = plt.subplots(1, 1, sharex=True, figsize=(6,4))
     for i in range(len(stressed_values)):

@@ -47,7 +47,7 @@ class environment:
     Model parameters for the environment.
     """
     def __init__(self, sigma = 1., S0 = 100., Z0 = 100., Y0 = 1000., eta = 0.1, xi = 0.1, T = 1., a1 = 1, a2 = 1, a3 = 1, Nt =1_000,
-                fee = 0, feeV = 0.5, C = 0.1, gamma = 1, zeta = 1, tempLP = 1e-2, P0 = 1, corr_BMs = 0.):
+                fee = 0, feeV = 0.5, C = 0.1, gamma = 1, zeta = 1, tempLP = 1e-2, P0 = 1):
         self.sigma = sigma
         self.T = T
         self.S0 = S0
@@ -68,7 +68,6 @@ class environment:
         self.timesteps = np.linspace(0, self.T, num = (Nt+1))
         self.dt = self.T/self.Nt
         self.P0 = P0
-        self.corr_BMs = corr_BMs
         
         self.U = np.zeros((3,3))
         self.U[1,1] = -(1+2*self.tempLP*self.zeta*self.eta**2-4*self.tempLP**2*self.gamma*self.zeta*self.eta**4)/(self.tempLP*(1+2*self.tempLP*(self.gamma+self.zeta)*self.eta**2))
@@ -80,10 +79,9 @@ class environment:
         self.V[2,1] = (self.gamma*self.zeta*self.sigma**2)/(self.gamma+self.zeta)
         
         self.R = np.zeros((3,3))
-        self.R[0,0] = 2*self.a3*self.xi + (self.gamma*self.eta**2*(1+2*self.tempLP*self.zeta*self.eta**2))/(2+4*self.tempLP*(self.gamma+self.zeta)*self.eta**2)
+        self.R[0,0] = 2*self.a3 + (self.gamma*self.eta**2*(1+2*self.tempLP*self.zeta*self.eta**2))/(2+4*self.tempLP*(self.gamma+self.zeta)*self.eta**2)
         self.R[2,2] = self.R[0,0]
-        self.R[1,1] = self.gamma*self.zeta*self.sigma**2/(2*(self.gamma+self.zeta))
-        self.R[0,2] = -2*self.a3*self.xi + (self.gamma*self.eta**2*(1+2*self.tempLP*self.zeta*self.eta**2))/(2+4*self.tempLP*(self.gamma+self.zeta)*self.eta**2)
+        self.R[0,2] = -2*self.a3 + (self.gamma*self.eta**2*(1+2*self.tempLP*self.zeta*self.eta**2))/(2+4*self.tempLP*(self.gamma+self.zeta)*self.eta**2)
         self.R[2,0] = self.R[0,2]
         
         self.dG2 = lambda t, G2: -dM(t, self.T, G2, self.U, self.V, self.R)        
@@ -232,7 +230,7 @@ class environment:
         rew[0,:] = self.P0
         
         venue_wealth = np.zeros((1,nsims))
-        for t in tqdm(range(self.Nt)):
+        for t in range(self.Nt):
             jump_a, jump_b, lambdaa, lambdab = self.simulate_jumps(Y[t,:], Z[t,:], S[t,:])
 #             A_a = self.xi*(S[t,:] - Z[t,:]*Y[t,:]/(Y[t,:] - self.eta)) - self.fee
 #             A_b = -self.xi*(S[t,:] - Z[t,:]*Y[t,:]/(Y[t,:] + self.eta)) - self.fee
@@ -286,15 +284,9 @@ class environment:
         wealth[0,:] -= Y[0,:]*(Z[0,:] + S[0,:])
         wealth[0,:] += rew[-1,:]
         venue_wealth[0,:] -= rew[-1,:]
-#         if venue_wealth[0,:].mean() < 0:
-#             mean = venue_wealth[0,:].mean()
-#             self.P0 = self.P0 + mean
-#             rew = rew + mean
-#             venue_wealth = venue_wealth - mean
-#             wealth = wealth + mean
         perf = -np.exp(-self.gamma*wealth)
         if verbose:
-            return S, Y, Z, X, nu, wealth, perf, rew, venue_wealth, A_a_hist, A_b_hist, A_W_hist, A_B_hist, rew_drift_hist, errs_B
+            return S, Y, Z, X, nu, wealth, perf, rew, venue_wealth, A_a_hist, A_b_hist, A_W_hist, A_B_hist, rew_drift_hist
         else:
             return S, Y, Z, X, nu, wealth, perf, rew, venue_wealth
         
@@ -342,7 +334,7 @@ class environment:
             A_a = 0
             A_b = 0
         elif strag_vn == '1':
-            A_a = self.xi*(St - Zt*Yt/(Yt - self.xi)) - self.fee # self.fee is just 0
+            A_a = self.xi*(St - Zt*Yt/(Yt - self.xi)) - self.fee
             A_b = -self.xi*(St - Zt*Yt/(Yt + self.xi)) - self.fee
             A_W = - Yt*self.sigma
             A_B = (self.partial_Y_h_1(t, Yt, Zt, St)/(self.tempLP*self.eta) - 2*(St+Zt)*self.gamma*self.eta)/(2*self.gamma + 1/(self.tempLP * self.eta**2))
