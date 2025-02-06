@@ -33,7 +33,7 @@ class environment:
     Model parameters for the environment.
     """
     def __init__(self, sigma = 1., S0 = 100., Z0 = 100., Y0 = 1000., eta = 0.1, xi = 0.1, T = 1., a1 = 1, a2 = 1, a3 = 1, Nt =1_000,
-                fee = 0.5, feeV = 0.5, C = 0.1, gamma = 1, zeta = 1, tempLP = 1e-2, P0 = 1, corr_BMs = 0.):
+                fee = 0.5, feeV = 0.5, C = 0.1, gamma = 1, zeta = None, tempLP = 1e-2, P0 = 1, corr_BMs = 0.):
         self.sigma = sigma
         self.T = T
         self.S0 = S0
