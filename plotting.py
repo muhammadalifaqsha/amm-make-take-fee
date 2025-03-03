@@ -25,7 +25,7 @@ plt.rcParams["font.size"] = fs
 
 def stress_two_parameters_two_sets_and_show_nu(environment = utils_aux.environment, parameter1 = 'fee', parameter2 = 'xi', values1 = [1,2,4,8,16], values2 = [1,2,4,8,16], 
                                                params = [], to_print1 = 'a', to_print2 = 'b', logScale = False, showZero = True, showSZ = False,
-                                               savefig = False, filename = 'check', nsim = 0, colors = colors, strag_vn = '1', strag_LP = '1'):
+                                               savefig = False, filename = 'check', nsim = 0, alpha = 0.2, colors = colors, strag_vn = '1', strag_LP = '1'):
     stressed_values1 = np.array(values1) * params[parameter1]
     stressed_values2 = np.array(values2) * params[parameter2]
     Nt = params['Nt']
@@ -41,11 +41,11 @@ def stress_two_parameters_two_sets_and_show_nu(environment = utils_aux.environme
         nu_all[:,it] = nu[:,nsim]
     fig, axs = plt.subplots(1, 1, sharex=True, figsize=(6,4))
     for i in range(len(stressed_values1)):
-        plt.plot(env_aux.timesteps, nu_all[:,i], label= to_print1 +  f'$* {(values1[i])}$'+r'$\,\,\,\&\,\,\,$'+ to_print2 +  f'$* {(values2[i])}$', color = colors[i])
+        plt.plot(env_aux.timesteps, nu_all[:,i], alpha = alpha, label= to_print1 +  f'$* {(values1[i])}$'+r'$\,\,\,\&\,\,\,$'+ to_print2 +  f'$* {(values2[i])}$', color = colors[i])
     plt.xlabel(r'$t$', fontsize = fsL)
     plt.ylabel(r'$\nu^*_t$', fontsize = fsL)
     if showZero:
-        plt.hlines(y = 0, xmin = 0, xmax = 1, linestyle = '--', alpha = 0.4, color='tab:red')
+        plt.hlines(y = 0, xmin = 0, xmax = 1, linestyle = '--', alpha = 0.2, color='tab:red')
     if logScale:
         plt.yscale("log")
     plt.legend(fontsize = fs, loc='upper right')
@@ -57,23 +57,23 @@ def stress_two_parameters_two_sets_and_show_nu(environment = utils_aux.environme
     
     if showSZ:
         fig, axs = plt.subplots(1, 1, sharex=True, figsize=(6,4))
-        plt.plot(env_aux.timesteps, -(S[:,nsim]+ Z[:,nsim]), label= r'$-(S_t+Z_t)$')
+        plt.plot(env_aux.timesteps, -(S[:,nsim]+ Z[:,nsim]),  alpha = alpha, label= r'$-(S_t+Z_t)$')
         plt.xlabel(r'$t$', fontsize = 18)
         if showZero:
-            plt.hlines(y = 0, xmin = 0, xmax = 1, linestyle = '--', alpha = 0.4, color='tab:red')
+            plt.hlines(y = 0, xmin = 0, xmax = 1, linestyle = '--', alpha = 0.2, color='tab:red')
         if logScale:
             plt.yscale("log")
         plt.legend(fontsize = fs, loc='upper right')
         plt.show()
         
-def params_show_nu(environment = utils_aux.environment, params = [], showZero = True, nsim =0, colors = colors, strag_vn = '1', strag_LP = '1'):
+def params_show_nu(environment = utils_aux.environment, params = [], showZero = True, nsim =0,alpha = 0.2, colors = colors, strag_vn = '1', strag_LP = '1'):
     Nt = params['Nt']
     nu_all = np.zeros((Nt+1,))
     np.random.seed(123)
     env_aux = environment(**params)
     S, Y, Z, X, nu, wealth, perf, rew, venue_wealth, A_a_hist, A_b_hist, A_W_hist, A_B_hist, rew_drift_hist = env_aux.simulate_venue(nsims=nsims, strag_LP=strag_LP, strag_vn=strag_vn, verbose = True)
     fig, axs = plt.subplots(1, 1, sharex=True, figsize=(6,4))
-    plt.plot(env_aux.timesteps, nu[:,nsim], color = colors[0])
+    plt.plot(env_aux.timesteps, nu[:,nsim],  alpha = alpha, color = colors[0])
     plt.xlabel(r'$t$', fontsize = 18)
     plt.ylabel(r'$\nu^*_t$', fontsize = 22)
     if showZero:
@@ -83,7 +83,7 @@ def params_show_nu(environment = utils_aux.environment, params = [], showZero = 
 
     
 def stress_parameter_and_show_nu(environment = utils_aux.environment, parameter = 'tempLP', values = [1,2,4,8,16], params = [], 
-                                 to_print = 'a', showZero = True, verbose= False, savefig = False, 
+                                 to_print = 'a', showZero = True, verbose= False, alpha = 0.2, savefig = False, 
                                  filename = 'check', nsim = 0, colors = colors, strag_vn = '1', strag_LP = '1'):
     Nt = params['Nt']
     stressed_values = np.array(values) * params[parameter]
@@ -97,11 +97,11 @@ def stress_parameter_and_show_nu(environment = utils_aux.environment, parameter 
         nu_all[:,it] = nu[:,nsim]
     fig, axs = plt.subplots(1, 1, sharex=True, figsize=(6,4))
     for i in range(len(stressed_values)):
-        plt.plot(env_aux.timesteps, nu_all[:,i], label= to_print +  f'$* {(values[i])}$', color = colors[i])
+        plt.plot(env_aux.timesteps, nu_all[:,i], alpha = alpha, label= to_print +  f'$* {(values[i])}$', color = colors[i])
     plt.xlabel(r'$t$', fontsize = 18)
     plt.ylabel(r'$\nu^*_t$', fontsize = 22)
     if showZero:
-        plt.hlines(y = 0, xmin = 0, xmax = 1, linestyle = '--', alpha = 0.4, color='tab:red')
+        plt.hlines(y = 0, xmin = 0, xmax = 1, linestyle = '--', alpha = 0.2, color='tab:red')
     plt.legend(fontsize = fs)
     if savefig:
         plt.tight_layout()
@@ -116,11 +116,11 @@ def stress_parameter_and_show_nu(environment = utils_aux.environment, parameter 
             nu_to_show[it] = env_aux.nu(t,   Yt=Y[it,nsim], Zt= Z[it,nsim], St= S[it,nsim], A_B = AB, strag_LP = strag_LP)
             nu_to_show2[it] = ( (env_aux.T - t) * (2*env_aux.a2*env_aux.feeV) - 2 * (S[it,nsim] + Z[it,nsim]) * env_aux.gamma * env_aux.tempLP * env_aux.eta**2 ) / (4* env_aux.eta**2 * env_aux.tempLP**2 * env_aux.gamma + 2*env_aux.tempLP)
         fig, axs = plt.subplots(1, 1, sharex=True, figsize=(6,4))
-        plt.plot(env_aux.timesteps, nu_to_show, '-', alpha = 0.4, color='tab:red', label = 'env')
-        plt.plot(env_aux.timesteps, nu_to_show2, '--', alpha = 0.3, color = 'tab:blue', label='repl')
+        plt.plot(env_aux.timesteps, nu_to_show, '-',  alpha = alpha, color='tab:red', label = 'env')
+        plt.plot(env_aux.timesteps, nu_to_show2, '--',  alpha = alpha, color = 'tab:blue', label='repl')
         plt.xlabel(r'$t$', fontsize = 18)
         plt.ylabel(r'$\nu^*_t~\mathrm{(replicated)}$', fontsize = 22)
         if showZero:
-            plt.hlines(y = 0, xmin = 0, xmax = 1, linestyle = '--', alpha = 0.4, color='tab:red')
+            plt.hlines(y = 0, xmin = 0, xmax = 1, linestyle = '--',  alpha = alpha, color='tab:red')
         plt.legend(fontsize = fs)
         plt.show()
